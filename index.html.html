@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Evan's Rainbow Rare Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+  <style>
+    /* ── DESIGN TOKENS (chucksai v7) ── */
+    :root {
+      --bg-deep:       #05080c;
+      --bg-card:       rgba(255,255,255,.035);
+      --bg-card-hover: rgba(255,255,255,.058);
+      --text-primary:  #e8f0f7;
+      --text-secondary:rgba(232,240,247,.55);
+      --text-muted:    rgba(232,240,247,.28);
+      --border:        rgba(255,255,255,.07);
+      --border-bright: rgba(255,255,255,.14);
+      --accent:        #7fd9b8;
+      --accent2:       #5bc8f5;
+      --accent3:       #f0b86a;
+      --accent-purple: #a78bfa;
+      --up:            #3ddc84;
+      --down:          #f05252;
+      --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-xl: 18px;
+    }
+
+    html.light {
+      --bg-deep:        #f0f4f8;
+      --bg-card:        rgba(0,0,0,.04);
+      --bg-card-hover:  rgba(0,0,0,.07);
+      --text-primary:   #0d1b2a;
+      --text-secondary: rgba(13,27,42,.55);
+      --text-muted:     rgba(13,27,42,.35);
+      --border:         rgba(0,0,0,.08);
+      --border-bright:  rgba(0,0,0,.15);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── ANIMATED BACKGROUND ── */
+    .bg-canvas {
+      position: fixed; inset: 0; z-index: 0;
+      pointer-events: none; overflow: hidden;
+    }
+    .bg-canvas::before {
+      content: ''; position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 55% at 10% 15%, rgba(167,139,250,.10) 0%, transparent 55%),
+        radial-gradient(ellipse 60% 70% at 90% 85%, rgba(127,217,184,.07) 0%, transparent 55%),
+        radial-gradient(ellipse 40% 50% at 50% 50%, rgba(91,200,245,.05) 0%, transparent 65%),
+        radial-gradient(ellipse 30% 40% at 25% 70%, rgba(240,184,106,.04) 0%, transparent 60%);
+      animation: bgPulse 18s ease-in-out infinite alternate;
+    }
+    @keyframes bgPulse {
+      0%   { opacity: .55; transform: scale(1); }
+      100% { opacity: 1;   transform: scale(1.05); }
+    }
+    .bg-canvas::after {
+      content: ''; position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.008) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.008) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    .orb {
+      position: absolute; border-radius: 50%;
+      filter: blur(110px);
+      animation: floatOrb linear infinite;
+      opacity: .18;
+    }
+    .orb1 { width:500px; height:500px; background: radial-gradient(circle,#a78bfa,#5b21b6); top:-180px; left:-120px; animation-duration:32s; }
+    .orb2 { width:580px; height:580px; background: radial-gradient(circle,#7fd9b8,#2a6e55); bottom:-200px; right:-130px; animation-duration:40s; animation-direction:reverse; }
+    .orb3 { width:300px; height:300px; background: radial-gradient(circle,#5bc8f5,#2a6ea6); top:42%; left:58%; animation-duration:25s; }
+    @keyframes floatOrb {
+      0%   { transform: translate(0,0) rotate(0deg); }
+      33%  { transform: translate(40px,-50px) rotate(120deg); }
+      66%  { transform: translate(-28px,28px) rotate(240deg); }
+      100% { transform: translate(0,0) rotate(360deg); }
+    }
+
+    /* ── HEADER / NAV ── */
+    .site-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(5,8,12,.82);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px;
+    }
+    html.light .site-nav { background: rgba(240,244,248,.88); }
+
+    .nav-logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 15px; font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: .04em;
+    }
+    .nav-logo .hi   { color: var(--accent-purple); }
+    .nav-logo .dot  { color: var(--accent); }
+    .nav-logo .sub  { color: var(--text-secondary); font-size: 11px; margin-left: 6px; }
+
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+
+    .theme-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--r-sm);
+      color: var(--text-secondary);
+      font-family: 'Space Mono', monospace;
+      font-size: 10px; font-weight: 700;
+      padding: 5px 10px; cursor: pointer;
+      transition: all .15s;
+      letter-spacing: .06em;
+    }
+    .theme-btn:hover { border-color: var(--accent-purple); color: var(--accent-purple); }
+
+    /* ── MAIN LAYOUT ── */
+    .main {
+      position: relative; z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 28px 20px 60px;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      margin-bottom: 28px;
+    }
+    .page-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 26px; font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: .02em;
+      margin-bottom: 6px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .rainbow-text {
+      background: linear-gradient(90deg, #a78bfa, #5bc8f5, #7fd9b8, #f0b86a, #f05252);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .page-sub {
+      font-size: 14px; color: var(--text-secondary);
+    }
+
+    /* ── STAT CARDS ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 16px 18px;
+    }
+    .stat-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: .16em; text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 32px; font-weight: 700;
+      color: var(--text-primary);
+    }
+    .stat-value.clr-purple { color: var(--accent-purple); }
+    .stat-value.clr-green  { color: var(--up); }
+    .stat-value.clr-red    { color: var(--down); }
+    .stat-value.clr-amber  { color: var(--accent3); }
+
+    /* ── PROGRESS BAR ── */
+    .progress-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      padding: 16px 18px;
+      margin-bottom: 20px;
+    }
+    .progress-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px;
+    }
+    .progress-meta-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: .16em; text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .progress-pct {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px; font-weight: 700;
+      color: var(--accent-purple);
+    }
+    .progress-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #a78bfa, #5bc8f5, #7fd9b8, #f0b86a, #f05252);
+      border-radius: 3px;
+      transition: width .5s ease;
+    }
+
+    /* ── CONTROLS ── */
+    .controls {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .search-input {
+      flex: 1; min-width: 180px;
+      font-family: 'DM Sans', sans-serif; font-size: 13px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--r-md);
+      padding: 8px 14px;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color .15s;
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-input:focus { border-color: var(--accent-purple); }
+
+    .filter-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      padding: 8px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--r-md);
+      color: var(--text-secondary);
+      cursor: pointer; transition: all .15s;
+    }
+    .filter-btn:hover { border-color: var(--border-bright); color: var(--text-primary); }
+    .filter-btn.active {
+      background: rgba(167,139,250,.12);
+      border-color: rgba(167,139,250,.4);
+      color: var(--accent-purple);
+    }
+
+    .action-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px; font-weight: 700; letter-spacing: .08em;
+      padding: 8px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      color: var(--text-secondary);
+      cursor: pointer; transition: all .15s;
+    }
+    .action-btn:hover { border-color: var(--border-bright); color: var(--text-primary); }
+    .action-btn.danger:hover { border-color: rgba(240,82,82,.4); color: var(--down); }
+
+    /* ── SET SECTION ── */
+    .set-section { margin-bottom: 24px; }
+
+    .set-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      margin-bottom: 10px;
+      cursor: pointer; user-select: none;
+      transition: border-color .15s, background .15s;
+    }
+    .set-header:hover {
+      border-color: var(--border-bright);
+      background: var(--bg-card-hover);
+    }
+    .set-name {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px; font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: .06em;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .set-year {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px; font-weight: 400;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 8px;
+    }
+    .set-prog {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px; color: var(--text-secondary);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .set-mini-bar {
+      width: 60px; height: 3px;
+      background: var(--border);
+      border-radius: 2px; overflow: hidden;
+    }
+    .set-mini-fill {
+      height: 100%;
+      background: var(--accent-purple);
+      border-radius: 2px;
+      transition: width .4s;
+    }
+
+    /* ── CARDS GRID ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .card-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .12s, border-color .15s, box-shadow .15s;
+      position: relative;
+    }
+    .card-item:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-bright);
+      box-shadow: 0 8px 28px rgba(0,0,0,.4);
+    }
+    .card-item.owned {
+      border-color: rgba(167,139,250,.5);
+      box-shadow: 0 0 16px rgba(167,139,250,.12);
+    }
+    .card-item.owned:hover {
+      border-color: rgba(167,139,250,.8);
+      box-shadow: 0 0 24px rgba(167,139,250,.22), 0 8px 28px rgba(0,0,0,.4);
+    }
+
+    .card-img-wrap {
+      position: relative;
+      aspect-ratio: 63/88;
+      background: var(--bg-card);
+      overflow: hidden;
+    }
+    .card-img-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+      opacity: 0; transition: opacity .25s;
+    }
+    .card-img-wrap img.loaded { opacity: 1; }
+
+    .card-placeholder {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 6px;
+      padding: 8px; text-align: center;
+    }
+    .card-placeholder-icon {
+      font-size: 22px; opacity: .35;
+    }
+    .card-placeholder-text {
+      font-size: 10px; color: var(--text-muted); line-height: 1.3;
+    }
+
+    /* shimmer while loading */
+    .card-shimmer {
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .card-item img.loaded ~ .card-shimmer { display: none; }
+
+    .owned-overlay {
+      position: absolute; inset: 0;
+      background: rgba(167,139,250,.15);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .15s;
+    }
+    .card-item.owned .owned-overlay { opacity: 1; }
+
+    .check-circle {
+      width: 30px; height: 30px;
+      background: var(--accent-purple);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 14px rgba(167,139,250,.6);
+    }
+    .check-circle svg { width: 16px; height: 16px; }
+
+    .card-info {
+      padding: 8px 9px;
+    }
+    .card-name {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px; font-weight: 500;
+      color: var(--text-primary);
+      line-height: 1.3; margin-bottom: 3px;
+    }
+    .card-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px; color: var(--text-muted);
+    }
+    .card-price {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px; color: var(--accent3);
+      margin-top: 2px;
+    }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center; padding: 48px 24px;
+      color: var(--text-muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 12px; letter-spacing: .06em;
+    }
+
+    /* ── ACTION ROW ── */
+    .action-row {
+      display: flex; gap: 8px; flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    /* ── SECTION LABEL ── */
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: .18em; text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .section-label::before {
+      content: ''; width: 3px; height: 10px;
+      border-radius: 2px;
+      background: var(--accent-purple);
+      box-shadow: 0 0 6px rgba(167,139,250,.6);
+      flex-shrink: 0;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      background: var(--bg-card);
+      border: 1px solid var(--border-bright);
+      border-radius: var(--r-md);
+      padding: 10px 16px;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px; color: var(--text-primary);
+      backdrop-filter: blur(12px);
+      opacity: 0; transform: translateY(8px);
+      transition: opacity .2s, transform .2s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .page-title { font-size: 20px; }
+      .stat-value { font-size: 26px; }
+      .cards-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-canvas">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<!-- NAV -->
+<nav class="site-nav">
+  <div class="nav-logo">
+    EVAN's<span class="hi">AI</span><span class="dot">.</span>
+    <span class="sub">Rainbow Rares</span>
+  </div>
+  <div class="nav-right">
+    <button class="theme-btn" id="theme-toggle">LIGHT</button>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-title">
+      <span class="rainbow-text">☆ Sun &amp; Moon Rainbow Rares</span>
+    </div>
+    <div class="page-sub">Click any card to mark it as owned — your progress saves automatically</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Cards</div>
+      <div class="stat-value clr-purple" id="stat-total">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Owned</div>
+      <div class="stat-value clr-green" id="stat-owned">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Missing</div>
+      <div class="stat-value clr-red" id="stat-missing">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sets Complete</div>
+      <div class="stat-value clr-amber" id="stat-sets">0</div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-meta">
+      <span class="progress-meta-label">Collection Progress</span>
+      <span class="progress-pct" id="progress-pct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <input class="search-input" type="text" id="search-input" placeholder="Search cards or sets…"/>
+    <button class="filter-btn active" data-filter="all">ALL</button>
+    <button class="filter-btn" data-filter="owned">OWNED</button>
+    <button class="filter-btn" data-filter="missing">MISSING</button>
+  </div>
+
+  <!-- Actions -->
+  <div class="action-row">
+    <button class="action-btn" id="export-btn">↓ Export Owned List</button>
+    <button class="action-btn" id="expand-btn">↕ Expand All</button>
+    <button class="action-btn danger" id="clear-btn">✕ Clear All</button>
+  </div>
+
+  <!-- Sets container -->
+  <div class="section-label">Sun &amp; Moon Era (2017–2019)</div>
+  <div id="sets-container"></div>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── THEME ── */
+(function(){
+  const t = localStorage.getItem('evan_theme');
+  if(t === 'light') document.documentElement.classList.add('light');
+})();
+
+document.getElementById('theme-toggle').addEventListener('click', function(){
+  const isLight = document.documentElement.classList.toggle('light');
+  localStorage.setItem('evan_theme', isLight ? 'light' : 'dark');
+  this.textContent = isLight ? 'DARK' : 'LIGHT';
+});
+
+/* ── DATA — ALL S&M ERA RAINBOW RARES ── */
+const SETS = [
+  { id:'sm-promos', name:'Sun & Moon Promos', year:'2017–2019', tcgCode:'smp', cards:[
+    { num:'SM80',  name:'Ho-Oh GX' },
+    { num:'SM155', name:'Kingdra GX' },
+    { num:'SM156', name:'Dragonite GX' },
+  ]},
+  { id:'sm-base', name:'Sun & Moon Base', year:'Feb 2017', tcgCode:'sm1', cards:[
+    { num:'150/149', name:'Lurantis GX' },
+    { num:'151/149', name:'Lapras GX' },
+    { num:'152/149', name:'Espeon GX' },
+    { num:'153/149', name:'Lunala GX' },
+    { num:'154/149', name:'Umbreon GX' },
+    { num:'155/149', name:'Solgaleo GX' },
+    { num:'156/149', name:'Tauros GX' },
+    { num:'157/149', name:'Gumshoos GX' },
+  ]},
+  { id:'guardians', name:'Guardians Rising', year:'May 2017', tcgCode:'sm2', cards:[
+    { num:'146/145', name:'Decidueye GX' },
+    { num:'147/145', name:'Incineroar GX' },
+    { num:'148/145', name:'Turtonator GX' },
+    { num:'149/145', name:'Primarina GX' },
+    { num:'150/145', name:'Alolan Ninetales GX' },
+    { num:'151/145', name:'Wishiwashi GX' },
+    { num:'152/145', name:'Vikavolt GX' },
+    { num:'153/145', name:'Tapu Koko GX' },
+    { num:'154/145', name:'Toxapex GX' },
+    { num:'155/145', name:'Tapu Lele GX' },
+    { num:'156/145', name:'Lycanroc GX' },
+    { num:'157/145', name:'Metagross GX' },
+    { num:'158/145', name:'Sylveon GX' },
+    { num:'159/145', name:'Kommo-o GX' },
+    { num:'160/145', name:'Drampa GX' },
+  ]},
+  { id:'burning', name:'Burning Shadows', year:'Aug 2017', tcgCode:'sm3', cards:[
+    { num:'148/147', name:'Golisopod GX' },
+    { num:'149/147', name:'Tapu Bulu GX' },
+    { num:'150/147', name:'Charizard GX' },
+    { num:'151/147', name:'Salazzle GX' },
+    { num:'152/147', name:'Tapu Fini GX' },
+    { num:'153/147', name:'Necrozma GX' },
+    { num:'154/147', name:'Machamp GX' },
+    { num:'155/147', name:'Lycanroc GX' },
+    { num:'156/147', name:'Marshadow GX' },
+    { num:'157/147', name:'Alolan Muk GX' },
+    { num:'158/147', name:'Darkrai GX' },
+    { num:'159/147', name:'Gardevoir GX' },
+    { num:'160/147', name:'Noivern GX' },
+  ]},
+  { id:'shining', name:'Shining Legends', year:'Oct 2017', tcgCode:'sm35', cards:[
+    { num:'74/73', name:'Entei GX' },
+    { num:'75/73', name:'Raichu GX' },
+    { num:'76/73', name:'Mewtwo GX' },
+    { num:'77/73', name:'Zoroark GX' },
+  ]},
+  { id:'crimson', name:'Crimson Invasion', year:'Nov 2017', tcgCode:'sm4', cards:[
+    { num:'112/111', name:'Gyarados GX' },
+    { num:'113/111', name:'Alolan Golem GX' },
+    { num:'114/111', name:'Nihilego GX' },
+    { num:'115/111', name:'Buzzwole GX' },
+    { num:'116/111', name:'Guzzlord GX' },
+    { num:'117/111', name:'Kartana GX' },
+    { num:'118/111', name:'Alolan Exeggutor GX' },
+    { num:'119/111', name:'Silvally GX' },
+  ]},
+  { id:'ultra-prism', name:'Ultra Prism', year:'Feb 2018', tcgCode:'sm5', cards:[
+    { num:'157/156', name:'Leafeon GX' },
+    { num:'158/156', name:'Pheromosa GX' },
+    { num:'159/156', name:'Glaceon GX' },
+    { num:'160/156', name:'Xurkitree GX' },
+    { num:'161/156', name:'Dawn Wings Necrozma GX' },
+    { num:'162/156', name:'Celesteela GX' },
+    { num:'163/156', name:'Dusk Mane Necrozma GX' },
+    { num:'164/156', name:'Dialga GX' },
+    { num:'165/156', name:'Palkia GX' },
+  ]},
+  { id:'forbidden', name:'Forbidden Light', year:'May 2018', tcgCode:'sm6', cards:[
+    { num:'132/131', name:'Palkia GX' },
+    { num:'133/131', name:'Greninja GX' },
+    { num:'134/131', name:'Naganadel GX' },
+    { num:'135/131', name:'Lucario GX' },
+    { num:'136/131', name:'Zygarde GX' },
+    { num:'137/131', name:'Yveltal GX' },
+    { num:'138/131', name:'Dialga GX' },
+    { num:'139/131', name:'Xerneas GX' },
+    { num:'140/131', name:'Ultra Necrozma GX' },
+  ]},
+  { id:'celestial', name:'Celestial Storm', year:'Aug 2018', tcgCode:'sm7', cards:[
+    { num:'169/168', name:'Shiftry GX' },
+    { num:'170/168', name:'Blaziken GX' },
+    { num:'171/168', name:'Articuno GX' },
+    { num:'172/168', name:'Electrode GX' },
+    { num:'173/168', name:'Mr. Mime GX' },
+    { num:'174/168', name:'Banette GX' },
+    { num:'175/168', name:'Scizor GX' },
+    { num:'176/168', name:'Stakataka GX' },
+    { num:'177/168', name:'Rayquaza GX' },
+  ]},
+  { id:'dragon-majesty', name:'Dragon Majesty', year:'Sep 2018', tcgCode:'sm7a', cards:[
+    { num:'71/70', name:'Reshiram GX' },
+    { num:'72/70', name:'Altaria GX' },
+    { num:'73/70', name:'Salamence GX' },
+    { num:'74/70', name:'White Kyurem GX' },
+  ]},
+  { id:'lost-thunder', name:'Lost Thunder', year:'Nov 2018', tcgCode:'sm8', cards:[
+    { num:'215/214', name:'Shuckle GX' },
+    { num:'216/214', name:'Sceptile GX' },
+    { num:'217/214', name:'Virizion GX' },
+    { num:'218/214', name:'Magcargo GX' },
+    { num:'219/214', name:'Blacephalon GX' },
+    { num:'220/214', name:'Suicune GX' },
+    { num:'221/214', name:'Zeraora GX' },
+    { num:'222/214', name:'Sigilyph GX' },
+    { num:'223/214', name:'Tyranitar GX' },
+    { num:'224/214', name:'Genesect GX' },
+    { num:'225/214', name:'Alolan Ninetales GX' },
+    { num:'226/214', name:'Mimikyu GX' },
+    { num:'227/214', name:'Lugia GX' },
+  ]},
+  { id:'team-up', name:'Team Up', year:'Feb 2019', tcgCode:'sm9', cards:[
+    { num:'182/181', name:'Celebi & Venusaur GX' },
+    { num:'183/181', name:'Magikarp & Wailord GX' },
+    { num:'184/181', name:'Pikachu & Zekrom GX' },
+    { num:'185/181', name:'Ampharos GX' },
+    { num:'186/181', name:'Gengar & Mimikyu GX' },
+    { num:'187/181', name:'Hoopa GX' },
+    { num:'188/181', name:'Incineroar GX' },
+    { num:'189/181', name:'Cobalion GX' },
+    { num:'190/181', name:'Latias & Latios GX' },
+    { num:'191/181', name:'Eevee & Snorlax GX' },
+  ]},
+  { id:'unbroken', name:'Unbroken Bonds', year:'May 2019', tcgCode:'sm10', cards:[
+    { num:'215/214', name:'Pheromosa & Buzzwole GX' },
+    { num:'217/214', name:'Reshiram & Charizard GX' },
+    { num:'219/214', name:'Dedenne GX' },
+    { num:'221/214', name:'Marshadow & Machamp GX' },
+    { num:'222/214', name:'Greninja & Zoroark GX' },
+    { num:'224/214', name:'Lucario & Melmetal GX' },
+    { num:'225/214', name:'Gardevoir & Sylveon GX' },
+    { num:'228/214', name:'Celesteela GX' },
+  ]},
+  { id:'unified', name:'Unified Minds', year:'Aug 2019', tcgCode:'sm11', cards:[
+    { num:'237/236', name:'Rowlet & Alolan Exeggutor GX' },
+    { num:'238/236', name:'Heatran GX' },
+    { num:'239/236', name:'Slowpoke & Psyduck GX' },
+    { num:'240/236', name:'Keldeo GX' },
+    { num:'241/236', name:'Raichu & Alolan Raichu GX' },
+    { num:'242/236', name:'Mewtwo & Mew GX' },
+    { num:'243/236', name:'Latios GX' },
+    { num:'244/236', name:'Aerodactyl GX' },
+    { num:'245/236', name:'Mega Sableye & Tyranitar GX' },
+    { num:'246/236', name:'Mawile GX' },
+    { num:'247/236', name:'Garchomp & Giratina GX' },
+    { num:'248/236', name:'Dragonite GX' },
+    { num:'249/236', name:'Naganadel GX' },
+  ]},
+  { id:'hidden-fates', name:'Hidden Fates', year:'Aug 2019', tcgCode:'sm115', cards:[
+    { num:'69/68', name:'Moltres & Zapdos & Articuno GX' },
+  ]},
+  { id:'cosmic', name:'Cosmic Eclipse', year:'Nov 2019', tcgCode:'sm12', cards:[
+    { num:'249/236', name:'Venusaur & Snivy GX' },
+    { num:'250/236', name:'Vileplume GX' },
+    { num:'251/236', name:'Charizard & Braixen GX' },
+    { num:'252/236', name:'Volcarona GX' },
+    { num:'253/236', name:'Blastoise & Piplup GX' },
+    { num:'254/236', name:'Solgaleo & Lunala GX' },
+    { num:'255/236', name:'Oricorio GX' },
+    { num:'256/236', name:'Flygon GX' },
+    { num:'257/236', name:'Alolan Persian GX' },
+    { num:'258/236', name:'Arceus & Dialga & Palkia GX' },
+    { num:'259/236', name:'Reshiram & Zekrom GX' },
+    { num:'260/236', name:'Naganadel & Guzzlord GX' },
+    { num:'261/236', name:'Mega Lopunny & Jigglypuff GX' },
+    { num:'262/236', name:'Silvally GX' },
+  ]},
+];
+
+/* ── STATE ── */
+let owned = {};
+let filter = 'all';
+let searchTerm = '';
+let collapsed = {};
+let allExpanded = false;
+const imgCache = {};
+
+try { const s = localStorage.getItem('evan_rr_owned'); if(s) owned = JSON.parse(s); } catch(e){}
+try { const s = localStorage.getItem('evan_rr_collapsed'); if(s) collapsed = JSON.parse(s); } catch(e){}
+
+function save() {
+  try { localStorage.setItem('evan_rr_owned', JSON.stringify(owned)); } catch(e){}
+}
+
+function cid(setId, num) { return setId + '||' + num; }
+
+/* ── POKEMON TCG API — images + prices ── */
+async function fetchCard(setCode, numStr, name) {
+  const key = setCode + '/' + numStr;
+  if (imgCache[key]) return imgCache[key];
+
+  const cleanNum = numStr.split('/')[0].replace('SM','').trim();
+  const tcgId = setCode + '-' + cleanNum;
+
+  // Try direct ID first
+  try {
+    const r = await fetch(`https://api.pokemontcg.io/v2/cards/${tcgId}`);
+    if (r.ok) {
+      const d = await r.json();
+      const card = d.data;
+      if (card) {
+        const result = {
+          img: card.images?.small || null,
+          market: card.tcgplayer?.prices?.holofoil?.market || card.tcgplayer?.prices?.reverseHolofoil?.market || null
+        };
+        imgCache[key] = result;
+        return result;
+      }
+    }
+  } catch(e){}
+
+  // Fallback: search by name + set + rainbow rare
+  try {
+    const q = encodeURIComponent(`name:"${name.replace(/ GX$/,'').replace(/&/g,' AND ')}" set.id:${setCode} rarity:"Rainbow Rare"`);
+    const r = await fetch(`https://api.pokemontcg.io/v2/cards?q=${q}&pageSize=1`);
+    if (r.ok) {
+      const d = await r.json();
+      const card = d.data?.[0];
+      if (card) {
+        const result = {
+          img: card.images?.small || null,
+          market: card.tcgplayer?.prices?.holofoil?.market || null
+        };
+        imgCache[key] = result;
+        return result;
+      }
+    }
+  } catch(e){}
+
+  imgCache[key] = { img: null, market: null };
+  return imgCache[key];
+}
+
+/* ── TOAST ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+/* ── STATS ── */
+function updateStats() {
+  const allCards = SETS.flatMap(s => s.cards.map(c => cid(s.id, c.num)));
+  const total = allCards.length;
+  const ownedCount = allCards.filter(id => owned[id]).length;
+  const setsComplete = SETS.filter(s => s.cards.every(c => owned[cid(s.id, c.num)])).length;
+  const pct = total > 0 ? Math.round((ownedCount / total) * 100) : 0;
+
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-owned').textContent = ownedCount;
+  document.getElementById('stat-missing').textContent = total - ownedCount;
+  document.getElementById('stat-sets').textContent = setsComplete;
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+/* ── RENDER ── */
+function render() {
+  const container = document.getElementById('sets-container');
+  container.innerHTML = '';
+  const q = searchTerm.toLowerCase();
+
+  SETS.forEach(set => {
+    const visibleCards = set.cards.filter(card => {
+      const id = cid(set.id, card.num);
+      const matchQ = !q || card.name.toLowerCase().includes(q) || card.num.toLowerCase().includes(q) || set.name.toLowerCase().includes(q);
+      const matchF = filter === 'all' || (filter === 'owned' && owned[id]) || (filter === 'missing' && !owned[id]);
+      return matchQ && matchF;
+    });
+    if (!visibleCards.length) return;
+
+    const ownedInSet = set.cards.filter(c => owned[cid(set.id, c.num)]).length;
+    const setPct = Math.round((ownedInSet / set.cards.length) * 100);
+    const isCollapsed = collapsed[set.id];
+
+    const section = document.createElement('div');
+    section.className = 'set-section';
+
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className = 'set-header';
+    hdr.innerHTML = `
+      <div class="set-name">
+        ${set.name}
+        <span class="set-year">${set.year}</span>
+        ${ownedInSet === set.cards.length ? '<span style="color:var(--accent-purple);font-size:10px;">★ COMPLETE</span>' : ''}
+      </div>
+      <div class="set-prog">
+        <div class="set-mini-bar"><div class="set-mini-fill" style="width:${setPct}%"></div></div>
+        <span data-set-prog="${set.id}">${ownedInSet}/${set.cards.length}</span>
+        <span style="color:var(--text-muted);font-size:10px;">${isCollapsed ? '▼' : '▲'}</span>
+      </div>
+    `;
+    hdr.addEventListener('click', () => {
+      collapsed[set.id] = !collapsed[set.id];
+      try { localStorage.setItem('evan_rr_collapsed', JSON.stringify(collapsed)); } catch(e){}
+      render();
+    });
+
+    const grid = document.createElement('div');
+    grid.className = 'cards-grid';
+    grid.style.display = isCollapsed ? 'none' : 'grid';
+
+    if (!isCollapsed) {
+      visibleCards.forEach(card => {
+        const id = cid(set.id, card.num);
+        const isOwned = owned[id];
+
+        const item = document.createElement('div');
+        item.className = 'card-item' + (isOwned ? ' owned' : '');
+        item.setAttribute('data-id', id);
+
+        item.innerHTML = `
+          <div class="card-img-wrap">
+            <div class="card-shimmer"></div>
+            <div class="card-placeholder">
+              <div class="card-placeholder-icon">🃏</div>
+              <div class="card-placeholder-text">${card.name}</div>
+            </div>
+            <img src="" alt="${card.name}" data-set="${set.tcgCode}" data-num="${card.num}" data-name="${card.name}"/>
+            <div class="owned-overlay">
+              <div class="check-circle">
+                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3 8l3.5 3.5L13 5" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-name">${card.name}</div>
+            <div class="card-num">${card.num}</div>
+            <div class="card-price" data-price="${id}"></div>
+          </div>
+        `;
+
+        item.addEventListener('click', () => {
+          owned[id] = !owned[id];
+          save();
+          item.classList.toggle('owned', owned[id]);
+          // update set progress
+          const ownedNow = set.cards.filter(c => owned[cid(set.id, c.num)]).length;
+          const pEl = document.querySelector(`[data-set-prog="${set.id}"]`);
+          if (pEl) pEl.textContent = `${ownedNow}/${set.cards.length}`;
+          const fillEl = item.closest('.set-section')?.querySelector('.set-mini-fill');
+          if (fillEl) fillEl.style.width = Math.round((ownedNow/set.cards.length)*100) + '%';
+          updateStats();
+          showToast(owned[id] ? `✓ ${card.name} added` : `✗ ${card.name} removed`);
+        });
+
+        grid.appendChild(item);
+
+        // lazy-load image
+        const img = item.querySelector('img');
+        fetchCard(set.tcgCode, card.num, card.name).then(data => {
+          if (data.img) {
+            img.onload = () => { img.classList.add('loaded'); };
+            img.src = data.img;
+          } else {
+            item.querySelector('.card-shimmer')?.remove();
+          }
+          if (data.market) {
+            const priceEl = document.querySelector(`[data-price="${id}"]`);
+            if (priceEl) priceEl.textContent = '$' + data.market.toFixed(2);
+          }
+        });
+      });
+    }
+
+    section.appendChild(hdr);
+    section.appendChild(grid);
+    container.appendChild(section);
+  });
+
+  updateStats();
+}
+
+/* ── CONTROLS ── */
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    filter = btn.dataset.filter;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+  searchTerm = e.target.value;
+  render();
+});
+
+document.getElementById('expand-btn').addEventListener('click', function() {
+  allExpanded = !allExpanded;
+  SETS.forEach(s => { collapsed[s.id] = allExpanded; });
+  this.textContent = allExpanded ? '↕ Collapse All' : '↕ Expand All';
+  render();
+});
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  const lines = ['Evan\'s Sun & Moon Rainbow Rares — Owned Cards', '=' .repeat(48), ''];
+  let hasAny = false;
+  SETS.forEach(set => {
+    const ownedCards = set.cards.filter(c => owned[cid(set.id, c.num)]);
+    if (ownedCards.length > 0) {
+      hasAny = true;
+      lines.push(`[ ${set.name} — ${set.year} ]  (${ownedCards.length}/${set.cards.length})`);
+      ownedCards.forEach(c => lines.push(`  ${c.num.padEnd(12)} ${c.name}`));
+      lines.push('');
+    }
+  });
+  if (!hasAny) { showToast('No cards owned yet!'); return; }
+  const total = SETS.flatMap(s => s.cards).length;
+  const ownedCount = Object.values(owned).filter(Boolean).length;
+  lines.push('-'.repeat(48));
+  lines.push(`Total: ${ownedCount} / ${total} (${Math.round(ownedCount/total*100)}%)`);
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'evan_rainbow_rares.txt';
+  a.click();
+  showToast('Exported!');
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  if (!confirm('Clear ALL owned cards? This cannot be undone.')) return;
+  owned = {};
+  save();
+  render();
+  showToast('Cleared all cards');
+});
+
+/* ── INIT ── */
+render();
+</script>
+</body>
+</html>
